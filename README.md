@@ -1,25 +1,19 @@
-# go-musthave-diploma-tpl
+# Gophermart Loyalty Service
 
-Шаблон репозитория для индивидуального дипломного проекта курса «Go-разработчик»
+This repository contains a minimal implementation of the "Gophermart" loyalty service. The service exposes an HTTP API with a simple health check endpoint.
 
-# Начало работы
+## Structure
 
-1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере.
-2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` — адрес вашего репозитория на GitHub без
-   префикса `https://`) для создания модуля
+- `cmd/gophermart` – application entry point.
+- `internal` – application packages.
+- `pkg` – reusable utilities.
+- `migrations` – SQL migrations.
 
-# Обновление шаблона
+## Quick start
 
-Чтобы иметь возможность получать обновления автотестов и других частей шаблона, выполните команду:
-
-```
-git remote add -m master template https://github.com/yandex-praktikum/go-musthave-diploma-tpl.git
-```
-
-Для обновления кода автотестов выполните команду:
-
-```
-git fetch template && git checkout template/master .github
+```bash
+make run
 ```
 
-Затем добавьте полученные изменения в свой репозиторий.
+The server listens on port `8080` and responds to `GET /ping` with `200 OK`.
+
