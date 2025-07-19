@@ -1,3 +1,5 @@
-module github.com/user/gophermart
 
-go 1.22
+module github.com/Hobrus/gophermarket
+
+go 1.23.1
+
