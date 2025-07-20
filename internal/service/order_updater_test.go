@@ -126,7 +126,7 @@ func TestOrderUpdater_Run(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	upd := NewOrderUpdater(orderRepo, accrualclient.New(srv.URL))
+	upd := NewOrderUpdater(orderRepo, accrualclient.New(srv.URL), nil)
 	runCtx, cancel := context.WithCancel(context.Background())
 	go upd.Run(runCtx, 2, 2, 200*time.Millisecond)
 

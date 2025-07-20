@@ -13,10 +13,11 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
+	"github.com/Hobrus/gophermarket/internal/domain"
 	"github.com/Hobrus/gophermarket/internal/storage/postgres"
 )
 
-func setupPostgres(t *testing.T) (*pgxpool.Pool, func()) {
+func setupPostgresBal(t *testing.T) (*pgxpool.Pool, func()) {
 	t.Helper()
 
 	ctx := context.Background()
@@ -76,7 +77,7 @@ func setupPostgres(t *testing.T) (*pgxpool.Pool, func()) {
 }
 
 func TestBalanceService_GetBalance(t *testing.T) {
-	pool, teardown := setupPostgres(t)
+	pool, teardown := setupPostgresBal(t)
 	defer teardown()
 
 	userRepo, orderRepo, withdrawalRepo := postgres.New(pool)
@@ -122,5 +123,57 @@ func TestBalanceService_GetBalance(t *testing.T) {
 	}
 	if !bal.Withdrawn.Equal(decimal.NewFromInt(8)) {
 		t.Errorf("expected withdrawn 8, got %s", bal.Withdrawn)
+	}
+}
+
+type stubOrderRepoBal struct{ calls int }
+
+func (s *stubOrderRepoBal) Add(ctx context.Context, num string, userID int64, status string) (error, error, error) {
+	return nil, nil, nil
+}
+func (s *stubOrderRepoBal) ListByUser(ctx context.Context, userID int64) ([]domain.Order, error) {
+	return nil, nil
+}
+func (s *stubOrderRepoBal) GetUnprocessed(ctx context.Context, limit int) ([]domain.Order, error) {
+	return nil, nil
+}
+func (s *stubOrderRepoBal) UpdateStatus(ctx context.Context, num, status string, accrual *decimal.Decimal) error {
+	return nil
+}
+func (s *stubOrderRepoBal) SumProcessedAccrualByUser(ctx context.Context, userID int64) (decimal.Decimal, error) {
+	s.calls++
+	return decimal.NewFromInt(10), nil
+}
+
+type stubWithdrawalRepoBal struct{ calls int }
+
+func (s *stubWithdrawalRepoBal) Create(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
+	return nil
+}
+func (s *stubWithdrawalRepoBal) ListByUser(ctx context.Context, userID int64) ([]domain.Withdrawal, error) {
+	return nil, nil
+}
+func (s *stubWithdrawalRepoBal) SumByUser(ctx context.Context, userID int64) (decimal.Decimal, error) {
+	s.calls++
+	return decimal.NewFromInt(5), nil
+}
+
+func TestBalanceService_Cache(t *testing.T) {
+	oRepo := &stubOrderRepoBal{}
+	wRepo := &stubWithdrawalRepoBal{}
+	svc := NewBalanceService(oRepo, wRepo)
+	ctx := context.Background()
+
+	for i := 0; i < 3; i++ {
+		bal, err := svc.GetBalance(ctx, 1)
+		if err != nil {
+			t.Fatalf("get balance: %v", err)
+		}
+		if !bal.Current.Equal(decimal.NewFromInt(5)) || !bal.Withdrawn.Equal(decimal.NewFromInt(5)) {
+			t.Fatalf("unexpected balance %+v", bal)
+		}
+	}
+	if oRepo.calls != 1 || wRepo.calls != 1 {
+		t.Fatalf("expected single repo call, got %d %d", oRepo.calls, wRepo.calls)
 	}
 }

@@ -30,6 +30,9 @@ func (s *stubOrderRepo) GetUnprocessed(ctx context.Context, limit int) ([]domain
 func (s *stubOrderRepo) UpdateStatus(ctx context.Context, num, status string, accrual *decimal.Decimal) error {
 	return nil
 }
+func (s *stubOrderRepo) SumProcessedAccrualByUser(ctx context.Context, userID int64) (decimal.Decimal, error) {
+	return decimal.Zero, nil
+}
 
 func TestOrderService_Add(t *testing.T) {
 	repo := &stubOrderRepo{addFunc: func(ctx context.Context, num string, userID int64, status string) (error, error, error) {

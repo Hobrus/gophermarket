@@ -6,6 +6,7 @@ require (
 	github.com/exaring/otelpgx v0.9.3
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/golang-jwt/jwt/v5 v5.2.3
+	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/riandyrn/otelchi v0.12.1

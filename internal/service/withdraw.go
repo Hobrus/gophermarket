@@ -12,11 +12,12 @@ import (
 type WithdrawService struct {
 	orders      repository.OrderRepo
 	withdrawals repository.WithdrawalRepo
+	inval       BalanceInvalidator
 }
 
 // NewWithdrawService creates a new WithdrawService instance.
-func NewWithdrawService(o repository.OrderRepo, w repository.WithdrawalRepo) *WithdrawService {
-	return &WithdrawService{orders: o, withdrawals: w}
+func NewWithdrawService(o repository.OrderRepo, w repository.WithdrawalRepo, b BalanceInvalidator) *WithdrawService {
+	return &WithdrawService{orders: o, withdrawals: w, inval: b}
 }
 
 // Withdraw deducts amount from user's balance if sufficient.
@@ -34,5 +35,11 @@ func (s *WithdrawService) Withdraw(ctx context.Context, userID int64, number str
 	if current.Cmp(amount) < 0 {
 		return domain.ErrInsufficientFunds
 	}
-	return s.withdrawals.Create(ctx, number, userID, amount)
+	if err := s.withdrawals.Create(ctx, number, userID, amount); err != nil {
+		return err
+	}
+	if s.inval != nil {
+		s.inval.Invalidate(userID)
+	}
+	return nil
 }
