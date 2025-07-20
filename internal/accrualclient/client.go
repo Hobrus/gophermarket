@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"golang.org/x/time/rate"
 )
 
 // Client requests order accrual information from the external service.
@@ -26,11 +27,18 @@ type Client interface {
 type HTTPClient struct {
 	baseURL string
 	http    *http.Client
+	limiter *rate.Limiter
 }
 
 // New creates a new HTTPClient with provided base URL.
 func New(baseURL string) *HTTPClient {
-	return &HTTPClient{baseURL: strings.TrimRight(baseURL, "/"), http: &http.Client{}}
+	lim := rate.NewLimiter(rate.Limit(5), 5)
+	lim.AllowN(time.Now(), 5)
+	return &HTTPClient{
+		baseURL: strings.TrimRight(baseURL, "/"),
+		http:    &http.Client{},
+		limiter: lim,
+	}
 }
 
 type getResponse struct {
@@ -41,6 +49,9 @@ type getResponse struct {
 
 // Get implements Client using GET /api/orders/{number} request.
 func (c *HTTPClient) Get(ctx context.Context, number string) (string, *decimal.Decimal, time.Duration, error) {
+	if err := c.limiter.Wait(ctx); err != nil {
+		return "", nil, 0, err
+	}
 	url := fmt.Sprintf("%s/api/orders/%s", c.baseURL, number)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
