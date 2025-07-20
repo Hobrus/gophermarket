@@ -45,3 +45,19 @@ func TestLoad_MissingRequired(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestLoad_DefaultJWTSecret(t *testing.T) {
+	t.Setenv("DATABASE_URI", "db")
+	t.Setenv("ACCRUAL_SYSTEM_ADDRESS", "acc")
+	t.Setenv("JWT_SECRET", "")
+	os.Args = []string{"cmd"}
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cfg.JWTSecret != "secret" {
+		t.Errorf("expected default secret, got %s", cfg.JWTSecret)
+	}
+}
