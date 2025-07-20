@@ -1,0 +1,85 @@
+package http
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/shopspring/decimal"
+
+	"github.com/Hobrus/gophermarket/internal/domain"
+)
+
+type stubOrders struct {
+	listFunc func(ctx context.Context, userID int64) ([]domain.Order, error)
+}
+
+func (s *stubOrders) ListByUser(ctx context.Context, userID int64) ([]domain.Order, error) {
+	return s.listFunc(ctx, userID)
+}
+
+func TestListOrders_NoOrders(t *testing.T) {
+	svc := &stubOrders{listFunc: func(ctx context.Context, userID int64) ([]domain.Order, error) {
+		return []domain.Order{}, nil
+	}}
+	router := NewOrdersRouter(svc)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/user/orders", nil)
+	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(1)))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Result().StatusCode != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestListOrders_Sorted(t *testing.T) {
+	t1 := time.Now().Add(-time.Hour)
+	t2 := time.Now()
+	accr := decimal.NewFromInt(5)
+	orders := []domain.Order{
+		{Number: "old", Status: "PROCESSED", Accrual: &accr, UploadedAt: t1},
+		{Number: "new", Status: "NEW", UploadedAt: t2},
+	}
+	svc := &stubOrders{listFunc: func(ctx context.Context, userID int64) ([]domain.Order, error) {
+		return orders, nil
+	}}
+	router := NewOrdersRouter(svc)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/user/orders", nil)
+	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(1)))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	}
+	var resp []struct {
+		Number     string   `json:"number"`
+		Status     string   `json:"status"`
+		Accrual    *float64 `json:"accrual,omitempty"`
+		UploadedAt string   `json:"uploaded_at"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if len(resp) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(resp))
+	}
+	if resp[0].Number != "new" {
+		t.Fatalf("expected new first, got %s", resp[0].Number)
+	}
+	if resp[0].Accrual != nil {
+		t.Fatal("unexpected accrual for new order")
+	}
+	if resp[1].Number != "old" {
+		t.Fatalf("expected old second, got %s", resp[1].Number)
+	}
+	if resp[1].Accrual == nil || *resp[1].Accrual != 5 {
+		t.Fatalf("unexpected accrual %v", resp[1].Accrual)
+	}
+}
