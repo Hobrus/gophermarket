@@ -36,12 +36,14 @@ func TestRegister_Success(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/user/register", bytes.NewBufferString(`{"login":"user","password":"pass"}`))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 	var c *http.Cookie
-	for _, ck := range w.Result().Cookies() {
+	for _, ck := range res.Cookies() {
 		if ck.Name == "AuthToken" {
 			c = ck
 			break
@@ -64,9 +66,11 @@ func TestRegister_Conflict(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/user/register", bytes.NewBufferString(`{"login":"a","password":"b"}`))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusConflict {
-		t.Fatalf("expected 409, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusConflict {
+		t.Fatalf("expected 409, got %d", res.StatusCode)
 	}
 }
 
@@ -79,9 +83,11 @@ func TestRegister_BadRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/user/register", bytes.NewBufferString("{"))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", res.StatusCode)
 	}
 }
 
@@ -94,9 +100,11 @@ func TestLogin_Unauthorized(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/user/login", bytes.NewBufferString(`{"login":"u","password":"p"}`))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", res.StatusCode)
 	}
 }
 
@@ -112,12 +120,14 @@ func TestLogin_Success(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/user/login", bytes.NewBufferString(`{"login":"user","password":"pass"}`))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 	var c *http.Cookie
-	for _, ck := range w.Result().Cookies() {
+	for _, ck := range res.Cookies() {
 		if ck.Name == "AuthToken" {
 			c = ck
 			break

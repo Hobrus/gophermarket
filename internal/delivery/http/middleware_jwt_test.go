@@ -19,12 +19,14 @@ func TestJWT_NoToken(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
 	if handlerCalled {
 		t.Fatal("handler should not be called")
 	}
-	if w.Result().StatusCode != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", res.StatusCode)
 	}
 }
 
@@ -53,9 +55,11 @@ func TestJWT_WithToken(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: "AuthToken", Value: tokenStr})
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 	if gotID != 42 {
 		t.Fatalf("expected id 42, got %d", gotID)

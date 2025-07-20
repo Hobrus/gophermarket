@@ -29,9 +29,11 @@ func TestWithdrawals_Unauthorized(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/user/withdrawals", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
 
-	if w.Result().StatusCode != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", w.Result().StatusCode)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", resp.StatusCode)
 	}
 }
 
@@ -52,9 +54,11 @@ func TestWithdrawals_NoContent(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
 
-	if w.Result().StatusCode != http.StatusNoContent {
-		t.Fatalf("expected 204, got %d", w.Result().StatusCode)
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
 }
 
@@ -80,9 +84,11 @@ func TestWithdrawals_Success(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
 	var res []struct {
 		Order       string  `json:"order"`
@@ -117,9 +123,11 @@ func TestWithdrawals_Error(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
 
-	if w.Result().StatusCode != http.StatusInternalServerError {
-		t.Fatalf("expected 500, got %d", w.Result().StatusCode)
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d", resp.StatusCode)
 	}
 }
 
@@ -141,9 +149,11 @@ func TestWithdrawals_Paging(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
 	var res []struct {
 		Order string `json:"order"`

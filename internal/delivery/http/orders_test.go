@@ -34,9 +34,11 @@ func TestListOrders_NoOrders(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(1)))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusNoContent {
-		t.Fatalf("expected 204, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", res.StatusCode)
 	}
 }
 
@@ -60,9 +62,11 @@ func TestListOrders_Sorted(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(1)))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 	var resp []struct {
 		Number     string   `json:"number"`
@@ -103,9 +107,11 @@ func TestListOrders_Paging(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(5)))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 	var resp []struct {
 		Number string `json:"number"`
