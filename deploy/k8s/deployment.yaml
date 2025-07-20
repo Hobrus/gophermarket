@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gophermart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gophermart
+  template:
+    metadata:
+      labels:
+        app: gophermart
+    spec:
+      containers:
+      - name: gophermart
+        image: gophermart:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: RUN_ADDRESS
+          value: ":8080"
+        - name: DATABASE_URI
+          value: "postgres://postgres:postgres@db:5432/gophermart?sslmode=disable"
+        - name: ACCRUAL_SYSTEM_ADDRESS
+          value: "http://accrual:8080"
+        - name: JWT_SECRET
+          value: "secret"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
