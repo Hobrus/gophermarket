@@ -13,11 +13,12 @@ import (
 type OrderUpdater struct {
 	repo   repository.OrderRepo
 	client accrualclient.Client
+	inval  BalanceInvalidator
 }
 
 // NewOrderUpdater creates a new updater instance.
-func NewOrderUpdater(r repository.OrderRepo, c accrualclient.Client) *OrderUpdater {
-	return &OrderUpdater{repo: r, client: c}
+func NewOrderUpdater(r repository.OrderRepo, c accrualclient.Client, b BalanceInvalidator) *OrderUpdater {
+	return &OrderUpdater{repo: r, client: c, inval: b}
 }
 
 // Run starts background workers that update orders until ctx is done.
@@ -38,13 +39,14 @@ func (u *OrderUpdater) Run(ctx context.Context, parallel, batch int, interval ti
 				continue
 			}
 			for _, o := range orders {
+				uid := o.UserID
 				select {
 				case <-ctx.Done():
 					break
 				case sem <- struct{}{}:
 				}
 				wg.Add(1)
-				go func(num string) {
+				go func(num string, uid int64) {
 					defer func() {
 						<-sem
 						wg.Done()
@@ -67,7 +69,10 @@ func (u *OrderUpdater) Run(ctx context.Context, parallel, batch int, interval ti
 						return
 					}
 					_ = u.repo.UpdateStatus(ctx, num, status, accrual)
-				}(o.Number)
+					if status == "PROCESSED" && u.inval != nil {
+						u.inval.Invalidate(uid)
+					}
+				}(o.Number, uid)
 			}
 		}
 	}
