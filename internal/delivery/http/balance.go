@@ -8,17 +8,23 @@ import (
 	"github.com/Hobrus/gophermarket/internal/domain"
 )
 
+type respDTO struct {
+	Current   float64 `json:"current"`
+	Withdrawn float64 `json:"withdrawn"`
+}
+
 // BalanceService defines method required to get user balance.
 type BalanceService interface {
 	GetBalance(ctx context.Context, userID int64) (domain.Balance, error)
 }
 
 // Balance returns handler for GET /api/user/balance.
+// @Summary Get user balance
+// @Success 200 {object} respDTO
+// @Success 401 {string} string "Unauthorized"
+// @Success 500 {string} string "Internal Server Error"
+// @Router /api/user/balance [get]
 func Balance(svc BalanceService) http.HandlerFunc {
-	type respDTO struct {
-		Current   float64 `json:"current"`
-		Withdrawn float64 `json:"withdrawn"`
-	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid, ok := UserIDFromCtx(r.Context())

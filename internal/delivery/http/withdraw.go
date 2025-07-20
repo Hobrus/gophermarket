@@ -16,12 +16,22 @@ type WithdrawalService interface {
 	Withdraw(ctx context.Context, userID int64, number string, amount decimal.Decimal) error
 }
 
+type reqDTO struct {
+	Order string  `json:"order"`
+	Sum   float64 `json:"sum"`
+}
+
 // Withdraw returns handler for POST /api/user/balance/withdraw.
+// @Summary Withdraw user balance
+// @Param request body reqDTO true "Withdraw info"
+// @Success 200 {string} string "OK"
+// @Success 400 {string} string "Bad Request"
+// @Success 401 {string} string "Unauthorized"
+// @Success 402 {string} string "Payment Required"
+// @Success 422 {string} string "Unprocessable Entity"
+// @Success 500 {string} string "Internal Server Error"
+// @Router /api/user/balance/withdraw [post]
 func Withdraw(svc WithdrawalService) http.HandlerFunc {
-	type reqDTO struct {
-		Order string  `json:"order"`
-		Sum   float64 `json:"sum"`
-	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid, ok := UserIDFromCtx(r.Context())

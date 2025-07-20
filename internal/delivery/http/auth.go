@@ -30,6 +30,14 @@ func NewRouter(auth AuthService) http.Handler {
 	return r
 }
 
+// register handles user registration
+// @Summary Register new user
+// @Param credentials body credentials true "User credentials"
+// @Success 200 {string} string "OK"
+// @Success 400 {string} string "Bad Request"
+// @Success 409 {string} string "Conflict"
+// @Success 500 {string} string "Internal Server Error"
+// @Router /api/user/register [post]
 func register(auth AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var creds credentials
@@ -60,6 +68,14 @@ func register(auth AuthService) http.HandlerFunc {
 	}
 }
 
+// login handles user login
+// @Summary Login user
+// @Param credentials body credentials true "User credentials"
+// @Success 200 {string} string "OK"
+// @Success 400 {string} string "Bad Request"
+// @Success 401 {string} string "Unauthorized"
+// @Success 500 {string} string "Internal Server Error"
+// @Router /api/user/login [post]
 func login(auth AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var creds credentials

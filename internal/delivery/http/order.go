@@ -23,6 +23,17 @@ func NewOrderRouter(svc UploadService) http.Handler {
 	return r
 }
 
+// uploadOrder uploads new order number
+// @Summary Upload order number
+// @Param number body string true "Order number"
+// @Success 202 {string} string "Accepted"
+// @Success 200 {string} string "Already uploaded"
+// @Success 400 {string} string "Bad Request"
+// @Success 401 {string} string "Unauthorized"
+// @Success 409 {string} string "Conflict"
+// @Success 422 {string} string "Unprocessable Entity"
+// @Success 500 {string} string "Internal Server Error"
+// @Router /api/user/orders [post]
 func uploadOrder(svc UploadService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := UserIDFromCtx(r.Context())

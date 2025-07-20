@@ -12,6 +12,13 @@ import (
 	"github.com/Hobrus/gophermarket/internal/domain"
 )
 
+type orderDTO struct {
+	Number     string   `json:"number"`
+	Status     string   `json:"status"`
+	Accrual    *float64 `json:"accrual,omitempty"`
+	UploadedAt string   `json:"uploaded_at"`
+}
+
 // ListService defines method required for listing user orders.
 type ListService interface {
 	ListByUser(ctx context.Context, userID int64) ([]domain.Order, error)
@@ -24,13 +31,14 @@ func NewOrdersRouter(svc ListService) http.Handler {
 	return r
 }
 
+// listOrders returns list of user's orders
+// @Summary List user orders
+// @Success 200 {array} orderDTO
+// @Success 204 {string} string "No Content"
+// @Success 401 {string} string "Unauthorized"
+// @Success 500 {string} string "Internal Server Error"
+// @Router /api/user/orders [get]
 func listOrders(svc ListService) http.HandlerFunc {
-	type orderDTO struct {
-		Number     string   `json:"number"`
-		Status     string   `json:"status"`
-		Accrual    *float64 `json:"accrual,omitempty"`
-		UploadedAt string   `json:"uploaded_at"`
-	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid, ok := UserIDFromCtx(r.Context())
