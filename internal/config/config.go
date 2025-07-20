@@ -49,7 +49,7 @@ func Load() (Config, error) {
 		return Config{}, errors.New("accrual address is required")
 	}
 	if cfg.JWTSecret == "" {
-		return Config{}, errors.New("JWT secret is required")
+		cfg.JWTSecret = "secret"
 	}
 
 	return cfg, nil
