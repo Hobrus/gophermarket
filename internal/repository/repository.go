@@ -39,4 +39,7 @@ type WithdrawalRepo interface {
 	ListByUser(ctx context.Context, userID int64) ([]domain.Withdrawal, error)
 	// SumByUser returns total amount withdrawn by user.
 	SumByUser(ctx context.Context, userID int64) (decimal.Decimal, error)
+	// Withdraw checks balance and registers withdrawal atomically.
+	// Returns ErrInsufficientBalance if balance is not enough.
+	Withdraw(ctx context.Context, num string, userID int64, amount decimal.Decimal) error
 }
