@@ -11,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+
 	"github.com/shopspring/decimal"
 	"golang.org/x/time/rate"
 )
@@ -36,7 +39,9 @@ func New(baseURL string) *HTTPClient {
 	lim.AllowN(time.Now(), 5)
 	return &HTTPClient{
 		baseURL: strings.TrimRight(baseURL, "/"),
-		http:    &http.Client{},
+		http: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport, otelhttp.WithTracerProvider(otel.GetTracerProvider())),
+		},
 		limiter: lim,
 	}
 }

@@ -8,12 +8,22 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/exaring/otelpgx"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riandyrn/otelchi"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.23.1"
 
 	_ "github.com/Hobrus/gophermarket/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -38,8 +48,53 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURI)
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	traceExp, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(endpoint), otlptracehttp.WithInsecure())
 	if err != nil {
+		log.Fatal(err)
+	}
+	metricExp, err := otlpmetrichttp.New(ctx, otlpmetrichttp.WithEndpoint(endpoint), otlpmetrichttp.WithInsecure())
+	if err != nil {
+		log.Fatal(err)
+	}
+	res, err := resource.New(ctx,
+		resource.WithSchemaURL(semconv.SchemaURL),
+		resource.WithAttributes(semconv.ServiceName("gophermart")),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(traceExp),
+		sdktrace.WithResource(res),
+	)
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExp)),
+		sdkmetric.WithResource(res),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetMeterProvider(mp)
+	tr := tp.Tracer("gophermart")
+	_ = tr
+
+	defer func() {
+		_ = tp.Shutdown(ctx)
+		_ = mp.Shutdown(ctx)
+	}()
+
+	poolCfg, err := pgxpool.ParseConfig(cfg.DatabaseURI)
+	if err != nil {
+		log.Fatal(err)
+	}
+	poolCfg.ConnConfig.Tracer = otelpgx.NewTracer(
+		otelpgx.WithTracerProvider(tp),
+		otelpgx.WithMeterProvider(mp),
+	)
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := otelpgx.RecordStats(pool, otelpgx.WithStatsMeterProvider(mp)); err != nil {
 		log.Fatal(err)
 	}
 
@@ -55,6 +110,7 @@ func main() {
 	router.Use(middleware.RequestID)
 	router.Use(logger.Middleware(l))
 	router.Use(middleware.Gzip(5))
+	router.Use(otelchi.Middleware("gophermart", otelchi.WithTracerProvider(tp)))
 
 	router.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
 
