@@ -114,6 +114,8 @@ func main() {
 
 	router.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
 
+	router.Mount("/health", dhttp.NewHealthRouter(pool))
+
 	router.Mount("/", dhttp.NewRouter(authSvc))
 	router.Group(func(r chi.Router) {
 		r.Use(dhttp.JWT([]byte(cfg.JWTSecret)))

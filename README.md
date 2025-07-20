@@ -15,7 +15,9 @@ This repository contains a minimal implementation of the "Gophermart" loyalty se
 make run
 ```
 
-The server listens on port `8080` and responds to `GET /ping` with `200 OK`.
+The server listens on port `8080` and exposes health check endpoints:
+`GET /health/live` always returns `200 OK`, and `GET /health/ready` returns
+`200 OK` when the database is reachable.
 
 ## Jaeger
 
