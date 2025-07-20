@@ -134,7 +134,7 @@ func TestOrderUpdater_Run(t *testing.T) {
 	cancel()
 	time.Sleep(200 * time.Millisecond)
 
-	orders, err := orderRepo.ListByUser(ctx, uid)
+	orders, err := orderRepo.ListByUser(ctx, uid, 50, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

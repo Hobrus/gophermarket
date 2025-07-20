@@ -21,7 +21,7 @@ func (s *stubOrderRepo) Add(ctx context.Context, num string, userID int64, statu
 	return nil, nil, nil
 }
 
-func (s *stubOrderRepo) ListByUser(ctx context.Context, userID int64) ([]domain.Order, error) {
+func (s *stubOrderRepo) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
 	return nil, nil
 }
 func (s *stubOrderRepo) GetUnprocessed(ctx context.Context, limit int) ([]domain.Order, error) {

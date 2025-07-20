@@ -14,15 +14,18 @@ import (
 )
 
 type stubOrders struct {
-	listFunc func(ctx context.Context, userID int64) ([]domain.Order, error)
+	listFunc func(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error)
 }
 
-func (s *stubOrders) ListByUser(ctx context.Context, userID int64) ([]domain.Order, error) {
-	return s.listFunc(ctx, userID)
+func (s *stubOrders) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
+	return s.listFunc(ctx, userID, limit, offset)
 }
 
 func TestListOrders_NoOrders(t *testing.T) {
-	svc := &stubOrders{listFunc: func(ctx context.Context, userID int64) ([]domain.Order, error) {
+	svc := &stubOrders{listFunc: func(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
+		if limit != 50 || offset != 0 {
+			t.Fatalf("unexpected pagination %d %d", limit, offset)
+		}
 		return []domain.Order{}, nil
 	}}
 	router := NewOrdersRouter(svc)
@@ -45,7 +48,10 @@ func TestListOrders_Sorted(t *testing.T) {
 		{Number: "old", Status: "PROCESSED", Accrual: &accr, UploadedAt: t1},
 		{Number: "new", Status: "NEW", UploadedAt: t2},
 	}
-	svc := &stubOrders{listFunc: func(ctx context.Context, userID int64) ([]domain.Order, error) {
+	svc := &stubOrders{listFunc: func(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
+		if limit != 50 || offset != 0 {
+			t.Fatalf("unexpected pagination %d %d", limit, offset)
+		}
 		return orders, nil
 	}}
 	router := NewOrdersRouter(svc)
@@ -81,5 +87,33 @@ func TestListOrders_Sorted(t *testing.T) {
 	}
 	if resp[1].Accrual == nil || *resp[1].Accrual != 5 {
 		t.Fatalf("unexpected accrual %v", resp[1].Accrual)
+	}
+}
+
+func TestListOrders_Paging(t *testing.T) {
+	svc := &stubOrders{listFunc: func(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
+		if limit != 1 || offset != 1 {
+			t.Fatalf("unexpected pagination %d %d", limit, offset)
+		}
+		return []domain.Order{{Number: "one"}, {Number: "two"}, {Number: "three"}}[offset : offset+limit], nil
+	}}
+	router := NewOrdersRouter(svc)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/user/orders?limit=1&offset=1", nil)
+	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(5)))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	}
+	var resp []struct {
+		Number string `json:"number"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if len(resp) != 1 || resp[0].Number != "two" {
+		t.Fatalf("unexpected response %+v", resp)
 	}
 }

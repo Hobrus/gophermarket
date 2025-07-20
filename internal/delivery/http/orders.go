@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -21,7 +22,7 @@ type orderDTO struct {
 
 // ListService defines method required for listing user orders.
 type ListService interface {
-	ListByUser(ctx context.Context, userID int64) ([]domain.Order, error)
+	ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error)
 }
 
 // NewOrdersRouter creates chi router with user orders endpoints.
@@ -46,7 +47,24 @@ func listOrders(svc ListService) http.HandlerFunc {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		orders, err := svc.ListByUser(r.Context(), uid)
+		q := r.URL.Query()
+		limit := 50
+		if v := q.Get("limit"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				if n > 100 {
+					n = 100
+				}
+				limit = n
+			}
+		}
+		offset := 0
+		if v := q.Get("offset"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+				offset = n
+			}
+		}
+
+		orders, err := svc.ListByUser(r.Context(), uid, limit, offset)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

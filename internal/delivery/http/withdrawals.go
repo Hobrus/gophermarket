@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Hobrus/gophermarket/internal/domain"
@@ -11,7 +12,7 @@ import (
 
 // WithdrawalRepo defines methods required to fetch withdrawals.
 type WithdrawalRepo interface {
-	ListByUser(ctx context.Context, userID int64) ([]domain.Withdrawal, error)
+	ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error)
 }
 
 type respItem struct {
@@ -34,7 +35,24 @@ func Withdrawals(repo WithdrawalRepo) http.HandlerFunc {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		list, err := repo.ListByUser(r.Context(), userID)
+		q := r.URL.Query()
+		limit := 50
+		if v := q.Get("limit"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				if n > 100 {
+					n = 100
+				}
+				limit = n
+			}
+		}
+		offset := 0
+		if v := q.Get("offset"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+				offset = n
+			}
+		}
+
+		list, err := repo.ListByUser(r.Context(), userID, limit, offset)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
