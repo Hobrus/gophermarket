@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/Hobrus/gophermarket/internal/domain"
+	"github.com/Hobrus/gophermarket/pkg/middleware"
 )
 
 type stubOrderService struct {
@@ -118,7 +119,7 @@ func TestUploadOrder(t *testing.T) {
 
 	for _, tt := range tests {
 		svc := &stubOrderService{addFunc: tt.addFn}
-		router := NewOrdersRouter(svc)
+		router := middleware.Gzip(5)(NewOrderRouter(svc))
 
 		var buf bytes.Buffer
 		if tt.gzip && !tt.noCompress {
