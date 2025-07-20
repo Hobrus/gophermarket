@@ -29,3 +29,9 @@ type Withdrawal struct {
 	Amount      decimal.Decimal
 	ProcessedAt time.Time
 }
+
+// Balance represents loyalty balance for a user.
+type Balance struct {
+	Current   decimal.Decimal
+	Withdrawn decimal.Decimal
+}

@@ -29,6 +29,8 @@ type OrderRepo interface {
 	GetUnprocessed(ctx context.Context, limit int) ([]domain.Order, error)
 	// UpdateStatus updates order status and optional accrual.
 	UpdateStatus(ctx context.Context, num, status string, accrual *decimal.Decimal) error
+	// SumProcessedAccrualByUser returns total accrual for processed orders of the user.
+	SumProcessedAccrualByUser(ctx context.Context, userID int64) (decimal.Decimal, error)
 }
 
 // WithdrawalRepo accesses withdrawals storage.
