@@ -14,7 +14,19 @@ type WithdrawalRepo interface {
 	ListByUser(ctx context.Context, userID int64) ([]domain.Withdrawal, error)
 }
 
+type respItem struct {
+	Order       string  `json:"order"`
+	Sum         float64 `json:"sum"`
+	ProcessedAt string  `json:"processed_at"`
+}
+
 // Withdrawals returns handler for GET /api/user/withdrawals.
+// @Summary List user withdrawals
+// @Success 200 {array} respItem
+// @Success 204 {string} string "No Content"
+// @Success 401 {string} string "Unauthorized"
+// @Success 500 {string} string "Internal Server Error"
+// @Router /api/user/withdrawals [get]
 func Withdrawals(repo WithdrawalRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := UserIDFromCtx(r.Context())
@@ -30,11 +42,6 @@ func Withdrawals(repo WithdrawalRepo) http.HandlerFunc {
 		if len(list) == 0 {
 			w.WriteHeader(http.StatusNoContent)
 			return
-		}
-		type respItem struct {
-			Order       string  `json:"order"`
-			Sum         float64 `json:"sum"`
-			ProcessedAt string  `json:"processed_at"`
 		}
 		resp := make([]respItem, len(list))
 		for i, it := range list {

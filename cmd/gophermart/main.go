@@ -1,5 +1,9 @@
 package main
 
+// @title Gophermart API
+// @version 1.0
+// @BasePath /
+
 import (
 	"context"
 	"log"
@@ -10,6 +14,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	_ "github.com/Hobrus/gophermarket/docs"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/Hobrus/gophermarket/internal/accrualclient"
 	"github.com/Hobrus/gophermarket/internal/config"
@@ -48,6 +55,8 @@ func main() {
 	router.Use(middleware.RequestID)
 	router.Use(logger.Middleware(l))
 	router.Use(middleware.Gzip(5))
+
+	router.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
 
 	router.Mount("/", dhttp.NewRouter(authSvc))
 	router.Group(func(r chi.Router) {
