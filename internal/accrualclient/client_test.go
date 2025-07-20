@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -106,5 +107,30 @@ func TestHTTPClient_Get(t *testing.T) {
 				t.Errorf("retry %v != %v", retry, tt.want.retry)
 			}
 		})
+	}
+}
+
+func TestHTTPClient_RateLimit(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	c := New(srv.URL)
+
+	start := time.Now()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c.Get(context.Background(), "42")
+		}()
+	}
+	wg.Wait()
+
+	if time.Since(start) < 2*time.Second {
+		t.Fatalf("expected duration >= 2s, got %v", time.Since(start))
 	}
 }

@@ -13,6 +13,7 @@ require (
 	github.com/swaggo/swag v1.16.5
 	github.com/testcontainers/testcontainers-go v0.38.0
 	golang.org/x/crypto v0.40.0
+	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8
 )
 
 require (
