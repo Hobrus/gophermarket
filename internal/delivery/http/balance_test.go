@@ -28,9 +28,11 @@ func TestBalance_Unauthorized(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/user/balance", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", res.StatusCode)
 	}
 }
 
@@ -48,9 +50,11 @@ func TestBalance_Success(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 	var resp struct {
 		Current   float64 `json:"current"`
@@ -74,9 +78,11 @@ func TestBalance_Zero(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(5)))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 	var resp struct {
 		Current   float64 `json:"current"`
@@ -100,8 +106,10 @@ func TestBalance_Error(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(1)))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusInternalServerError {
-		t.Fatalf("expected 500, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d", res.StatusCode)
 	}
 }

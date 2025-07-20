@@ -38,11 +38,12 @@ func (u *OrderUpdater) Run(ctx context.Context, parallel, batch int, interval ti
 			if err != nil {
 				continue
 			}
+		ordersLoop:
 			for _, o := range orders {
 				uid := o.UserID
 				select {
 				case <-ctx.Done():
-					break
+					break ordersLoop
 				case sem <- struct{}{}:
 				}
 				wg.Add(1)

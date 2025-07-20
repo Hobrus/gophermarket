@@ -138,9 +138,11 @@ func TestUploadOrder(t *testing.T) {
 		}
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
+		res := w.Result()
+		defer res.Body.Close()
 
-		if w.Result().StatusCode != tt.status {
-			t.Errorf("%s: expected %d, got %d", tt.name, tt.status, w.Result().StatusCode)
+		if res.StatusCode != tt.status {
+			t.Errorf("%s: expected %d, got %d", tt.name, tt.status, res.StatusCode)
 		}
 	}
 }

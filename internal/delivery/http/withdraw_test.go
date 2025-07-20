@@ -32,9 +32,11 @@ func TestWithdraw_Success(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(1)))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", res.StatusCode)
 	}
 }
 
@@ -48,9 +50,11 @@ func TestWithdraw_Insufficient(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(2)))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusPaymentRequired {
-		t.Fatalf("expected 402, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusPaymentRequired {
+		t.Fatalf("expected 402, got %d", res.StatusCode)
 	}
 }
 
@@ -65,8 +69,10 @@ func TestWithdraw_InvalidOrder(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), userIDKey, int64(1)))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	res := w.Result()
+	defer res.Body.Close()
 
-	if w.Result().StatusCode != http.StatusUnprocessableEntity {
-		t.Fatalf("expected 422, got %d", w.Result().StatusCode)
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("expected 422, got %d", res.StatusCode)
 	}
 }
