@@ -24,7 +24,8 @@ type OrderRepo interface {
 	// ErrConflictOther if it belongs to another user.
 	Add(ctx context.Context, num string, userID int64, status string) (errConflictSelf, errConflictOther, err error)
 	// ListByUser returns orders uploaded by the user sorted by upload time desc.
-	ListByUser(ctx context.Context, userID int64) ([]domain.Order, error)
+	// Limit and offset define pagination parameters.
+	ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error)
 	// GetUnprocessed returns a list of orders with status NEW or PROCESSING up to limit.
 	GetUnprocessed(ctx context.Context, limit int) ([]domain.Order, error)
 	// UpdateStatus updates order status and optional accrual.
@@ -38,7 +39,8 @@ type WithdrawalRepo interface {
 	// Create registers a withdrawal request for user.
 	Create(ctx context.Context, num string, userID int64, amount decimal.Decimal) error
 	// ListByUser returns withdrawal history for user sorted by processed time desc.
-	ListByUser(ctx context.Context, userID int64) ([]domain.Withdrawal, error)
+	// Limit and offset define pagination parameters.
+	ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error)
 	// SumByUser returns total amount withdrawn by user.
 	SumByUser(ctx context.Context, userID int64) (decimal.Decimal, error)
 }

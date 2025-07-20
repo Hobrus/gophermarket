@@ -123,7 +123,7 @@ func (r *orderRepo) Add(ctx context.Context, num string, userID int64, status st
 	return nil, nil, nil
 }
 
-func (r *orderRepo) ListByUser(ctx context.Context, userID int64) ([]domain.Order, error) {
+func (r *orderRepo) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
 	tx, ctx, cancel, err := beginTx(ctx, r.pool)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (r *orderRepo) ListByUser(ctx context.Context, userID int64) ([]domain.Orde
 	defer cancel()
 	defer tx.Rollback(ctx)
 
-	rows, err := tx.Query(ctx, `SELECT number, user_id, status, accrual, uploaded_at FROM orders WHERE user_id=$1 ORDER BY uploaded_at DESC`, userID)
+	rows, err := tx.Query(ctx, `SELECT number, user_id, status, accrual, uploaded_at FROM orders WHERE user_id=$1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3`, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (r *withdrawalRepo) Create(ctx context.Context, num string, userID int64, a
 	return tx.Commit(ctx)
 }
 
-func (r *withdrawalRepo) ListByUser(ctx context.Context, userID int64) ([]domain.Withdrawal, error) {
+func (r *withdrawalRepo) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error) {
 	tx, ctx, cancel, err := beginTx(ctx, r.pool)
 	if err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func (r *withdrawalRepo) ListByUser(ctx context.Context, userID int64) ([]domain
 	defer cancel()
 	defer tx.Rollback(ctx)
 
-	rows, err := tx.Query(ctx, `SELECT order_number, user_id, amount, processed_at FROM withdrawals WHERE user_id=$1 ORDER BY processed_at DESC`, userID)
+	rows, err := tx.Query(ctx, `SELECT order_number, user_id, amount, processed_at FROM withdrawals WHERE user_id=$1 ORDER BY processed_at DESC LIMIT $2 OFFSET $3`, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}

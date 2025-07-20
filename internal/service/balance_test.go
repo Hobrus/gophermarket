@@ -131,7 +131,7 @@ type stubOrderRepoBal struct{ calls int }
 func (s *stubOrderRepoBal) Add(ctx context.Context, num string, userID int64, status string) (error, error, error) {
 	return nil, nil, nil
 }
-func (s *stubOrderRepoBal) ListByUser(ctx context.Context, userID int64) ([]domain.Order, error) {
+func (s *stubOrderRepoBal) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
 	return nil, nil
 }
 func (s *stubOrderRepoBal) GetUnprocessed(ctx context.Context, limit int) ([]domain.Order, error) {
@@ -150,7 +150,7 @@ type stubWithdrawalRepoBal struct{ calls int }
 func (s *stubWithdrawalRepoBal) Create(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
 	return nil
 }
-func (s *stubWithdrawalRepoBal) ListByUser(ctx context.Context, userID int64) ([]domain.Withdrawal, error) {
+func (s *stubWithdrawalRepoBal) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error) {
 	return nil, nil
 }
 func (s *stubWithdrawalRepoBal) SumByUser(ctx context.Context, userID int64) (decimal.Decimal, error) {
