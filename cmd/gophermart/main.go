@@ -47,12 +47,13 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
 	router.Use(logger.Middleware(l))
+	router.Use(middleware.Gzip(5))
 
 	router.Mount("/", dhttp.NewRouter(authSvc))
 	router.Group(func(r chi.Router) {
 		r.Use(dhttp.JWT([]byte(cfg.JWTSecret)))
-		r.Mount("/", dhttp.NewOrdersRouter(orderSvc))
-		r.Mount("/", dhttp.NewOrdersRouter(orderSvc))
+		r.Mount("/", dhttp.NewOrderRouter(orderSvc))
+		r.Mount("/", dhttp.NewOrdersRouter(orderRepo))
 		r.Get("/api/user/balance", dhttp.Balance(balanceSvc))
 		r.Post("/api/user/balance/withdraw", dhttp.Withdraw(withdrawSvc))
 		r.Get("/api/user/withdrawals", dhttp.Withdrawals(withdrawalRepo))
@@ -64,6 +65,6 @@ func main() {
 	<-ctx.Done()
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_ = pool.Close()
+	pool.Close()
 	<-ctxShutdown.Done()
 }

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"compress/gzip"
 	"context"
 	"io"
 	"net/http"
@@ -12,19 +11,19 @@ import (
 	"github.com/Hobrus/gophermarket/pkg/luhn"
 )
 
-// OrderService defines methods required for order operations.
-type OrderService interface {
+// UploadService defines methods required for order upload operations.
+type UploadService interface {
 	Add(ctx context.Context, userID int64, number string) (errConflictSelf, errConflictOther, err error)
 }
 
-// NewOrdersRouter creates router with order endpoints.
-func NewOrdersRouter(svc OrderService) http.Handler {
+// NewOrderRouter creates router with order upload endpoint.
+func NewOrderRouter(svc UploadService) http.Handler {
 	r := chi.NewRouter()
 	r.Post("/api/user/orders", uploadOrder(svc))
 	return r
 }
 
-func uploadOrder(svc OrderService) http.HandlerFunc {
+func uploadOrder(svc UploadService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := UserIDFromCtx(r.Context())
 		if !ok {
@@ -32,17 +31,7 @@ func uploadOrder(svc OrderService) http.HandlerFunc {
 			return
 		}
 
-		var reader io.Reader = r.Body
-		if r.Header.Get("Content-Encoding") == "gzip" {
-			gz, err := gzip.NewReader(r.Body)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			defer gz.Close()
-			reader = gz
-		}
-		body, err := io.ReadAll(reader)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

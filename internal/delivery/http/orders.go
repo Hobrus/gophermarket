@@ -12,19 +12,19 @@ import (
 	"github.com/Hobrus/gophermarket/internal/domain"
 )
 
-// OrderService defines method required for listing user orders.
-type OrderService interface {
+// ListService defines method required for listing user orders.
+type ListService interface {
 	ListByUser(ctx context.Context, userID int64) ([]domain.Order, error)
 }
 
 // NewOrdersRouter creates chi router with user orders endpoints.
-func NewOrdersRouter(svc OrderService) http.Handler {
+func NewOrdersRouter(svc ListService) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/api/user/orders", listOrders(svc))
 	return r
 }
 
-func listOrders(svc OrderService) http.HandlerFunc {
+func listOrders(svc ListService) http.HandlerFunc {
 	type orderDTO struct {
 		Number     string   `json:"number"`
 		Status     string   `json:"status"`
