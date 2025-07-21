@@ -95,18 +95,14 @@ func (r *userRepo) GetByLogin(ctx context.Context, login string) (domain.User, e
 // -- OrderRepo implementation --
 
 func (r *orderRepo) Add(ctx context.Context, num string, userID int64, status string) (error, error, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return nil, nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(ctx, `INSERT INTO orders (number, user_id, status) VALUES ($1,$2,$3)`, num, userID, status)
+	_, err := r.pool.Exec(ctx, `INSERT INTO orders (number, user_id, status) VALUES ($1,$2,$3)`, num, userID, status)
 	if err != nil {
 		if isUniqueViolation(err) {
 			var existing int64
-			err2 := tx.QueryRow(ctx, `SELECT user_id FROM orders WHERE number=$1`, num).Scan(&existing)
+			err2 := r.pool.QueryRow(ctx, `SELECT user_id FROM orders WHERE number=$1`, num).Scan(&existing)
 			if err2 != nil {
 				return nil, nil, err2
 			}
@@ -115,9 +111,6 @@ func (r *orderRepo) Add(ctx context.Context, num string, userID int64, status st
 			}
 			return nil, domain.ErrConflictOther, nil
 		}
-		return nil, nil, err
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return nil, nil, err
 	}
 	return nil, nil, nil
