@@ -24,9 +24,6 @@ func NewAuthService(repo repository.UserRepo, secret []byte) *AuthService {
 
 // Register registers a new user and returns JWT token.
 func (s *AuthService) Register(ctx context.Context, login, password string) (string, error) {
-	if len(login) < 3 {
-		return "", errors.New("login too short")
-	}
 	hash, err := crypto.HashPassword(password)
 	if err != nil {
 		return "", err

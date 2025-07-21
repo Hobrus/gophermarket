@@ -50,8 +50,6 @@ func Register(auth AuthService) http.HandlerFunc {
 			switch {
 			case errors.Is(err, domain.ErrConflictSelf):
 				w.WriteHeader(http.StatusConflict)
-			case err.Error() == "login too short":
-				w.WriteHeader(http.StatusBadRequest)
 			default:
 				w.WriteHeader(http.StatusInternalServerError)
 			}
@@ -62,7 +60,6 @@ func Register(auth AuthService) http.HandlerFunc {
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   true,
 		})
 		w.WriteHeader(http.StatusOK)
 	}
@@ -98,7 +95,6 @@ func Login(auth AuthService) http.HandlerFunc {
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   true,
 		})
 		w.WriteHeader(http.StatusOK)
 	}

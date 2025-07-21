@@ -52,7 +52,7 @@ func TestRegister_Success(t *testing.T) {
 	if c == nil {
 		t.Fatal("cookie missing")
 	}
-	if c.Value != "token" || !c.HttpOnly || !c.Secure || c.Path != "/" {
+	if c.Value != "token" || !c.HttpOnly || c.Secure || c.Path != "/" {
 		t.Fatal("cookie properties incorrect")
 	}
 }
@@ -136,7 +136,7 @@ func TestLogin_Success(t *testing.T) {
 	if c == nil {
 		t.Fatal("cookie missing")
 	}
-	if c.Value != "tok" || !c.HttpOnly || !c.Secure || c.Path != "/" {
+	if c.Value != "tok" || !c.HttpOnly || c.Secure || c.Path != "/" {
 		t.Fatal("cookie properties incorrect")
 	}
 }

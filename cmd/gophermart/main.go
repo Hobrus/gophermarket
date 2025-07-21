@@ -97,6 +97,9 @@ func main() {
 	if err := otelpgx.RecordStats(pool, otelpgx.WithStatsMeterProvider(mp)); err != nil {
 		log.Fatal(err)
 	}
+	if err := postgres.ApplyMigrations(ctx, pool); err != nil {
+		log.Fatal(err)
+	}
 
 	userRepo, orderRepo, withdrawalRepo := postgres.New(pool)
 
