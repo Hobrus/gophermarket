@@ -64,7 +64,7 @@ func setupPostgres(t *testing.T) (*pgxpool.Pool, func()) {
 		t.Fatal(err)
 	}
 
-	if err := applyMigrations(ctx, pool); err != nil {
+	if err := ApplyMigrations(ctx, pool); err != nil {
 		t.Fatal(err)
 	}
 
