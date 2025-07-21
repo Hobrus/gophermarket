@@ -116,11 +116,13 @@ func main() {
 
 	router.Mount("/health", dhttp.NewHealthRouter(pool))
 
-	router.Mount("/", dhttp.NewRouter(authSvc))
+	router.Post("/api/user/register", dhttp.Register(authSvc))
+	router.Post("/api/user/login", dhttp.Login(authSvc))
+
 	router.Group(func(r chi.Router) {
 		r.Use(dhttp.JWT([]byte(cfg.JWTSecret)))
-		r.Mount("/", dhttp.NewOrderRouter(orderSvc))
-		r.Mount("/", dhttp.NewOrdersRouter(orderRepo))
+		r.Post("/api/user/orders", dhttp.UploadOrder(orderSvc))
+		r.Get("/api/user/orders", dhttp.ListOrders(orderRepo))
 		r.Get("/api/user/balance", dhttp.Balance(balanceSvc))
 		r.Post("/api/user/balance/withdraw", dhttp.Withdraw(withdrawSvc))
 		r.Get("/api/user/withdrawals", dhttp.Withdrawals(withdrawalRepo))

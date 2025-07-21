@@ -25,8 +25,8 @@ type credentials struct {
 // NewRouter creates chi router with authentication endpoints.
 func NewRouter(auth AuthService) http.Handler {
 	r := chi.NewRouter()
-	r.Post("/api/user/register", register(auth))
-	r.Post("/api/user/login", login(auth))
+	r.Post("/api/user/register", Register(auth))
+	r.Post("/api/user/login", Login(auth))
 	return r
 }
 
@@ -38,7 +38,7 @@ func NewRouter(auth AuthService) http.Handler {
 // @Success 409 {string} string "Conflict"
 // @Success 500 {string} string "Internal Server Error"
 // @Router /api/user/register [post]
-func register(auth AuthService) http.HandlerFunc {
+func Register(auth AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var creds credentials
 		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
@@ -76,7 +76,7 @@ func register(auth AuthService) http.HandlerFunc {
 // @Success 401 {string} string "Unauthorized"
 // @Success 500 {string} string "Internal Server Error"
 // @Router /api/user/login [post]
-func login(auth AuthService) http.HandlerFunc {
+func Login(auth AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var creds credentials
 		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {

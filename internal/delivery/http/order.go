@@ -19,7 +19,7 @@ type UploadService interface {
 // NewOrderRouter creates router with order upload endpoint.
 func NewOrderRouter(svc UploadService) http.Handler {
 	r := chi.NewRouter()
-	r.Post("/api/user/orders", uploadOrder(svc))
+	r.Post("/api/user/orders", UploadOrder(svc))
 	return r
 }
 
@@ -34,7 +34,7 @@ func NewOrderRouter(svc UploadService) http.Handler {
 // @Success 422 {string} string "Unprocessable Entity"
 // @Success 500 {string} string "Internal Server Error"
 // @Router /api/user/orders [post]
-func uploadOrder(svc UploadService) http.HandlerFunc {
+func UploadOrder(svc UploadService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := UserIDFromCtx(r.Context())
 		if !ok {

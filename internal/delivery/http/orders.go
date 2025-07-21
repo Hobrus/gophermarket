@@ -28,7 +28,7 @@ type ListService interface {
 // NewOrdersRouter creates chi router with user orders endpoints.
 func NewOrdersRouter(svc ListService) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/api/user/orders", listOrders(svc))
+	r.Get("/api/user/orders", ListOrders(svc))
 	return r
 }
 
@@ -39,7 +39,7 @@ func NewOrdersRouter(svc ListService) http.Handler {
 // @Success 401 {string} string "Unauthorized"
 // @Success 500 {string} string "Internal Server Error"
 // @Router /api/user/orders [get]
-func listOrders(svc ListService) http.HandlerFunc {
+func ListOrders(svc ListService) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		uid, ok := UserIDFromCtx(r.Context())
