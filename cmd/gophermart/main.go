@@ -13,9 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/exaring/otelpgx"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riandyrn/otelchi"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -82,22 +80,8 @@ func main() {
 		_ = mp.Shutdown(ctx)
 	}()
 
-	poolCfg, err := pgxpool.ParseConfig(cfg.DatabaseURI)
+	pool, err := postgres.NewPool(ctx, cfg.DatabaseURI)
 	if err != nil {
-		log.Fatal(err)
-	}
-	poolCfg.ConnConfig.Tracer = otelpgx.NewTracer(
-		otelpgx.WithTracerProvider(tp),
-		otelpgx.WithMeterProvider(mp),
-	)
-	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := otelpgx.RecordStats(pool, otelpgx.WithStatsMeterProvider(mp)); err != nil {
-		log.Fatal(err)
-	}
-	if err := postgres.ApplyMigrations(ctx, pool); err != nil {
 		log.Fatal(err)
 	}
 
