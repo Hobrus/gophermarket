@@ -90,7 +90,7 @@ func main() {
 		otelpgx.WithTracerProvider(tp),
 		otelpgx.WithMeterProvider(mp),
 	)
-	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	pool, err := postgres.ConnectWithRetry(ctx, poolCfg, 5, time.Second)
 	if err != nil {
 		log.Fatal(err)
 	}
