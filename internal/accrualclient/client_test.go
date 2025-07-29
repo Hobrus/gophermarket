@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -67,7 +68,7 @@ func TestHTTPClient_Get(t *testing.T) {
 				w.Header().Set("Retry-After", "2")
 				w.WriteHeader(http.StatusTooManyRequests)
 			},
-			want: want{retry: 2 * time.Second},
+			want: want{retry: 2 * time.Second, err: true},
 		},
 		{
 			name: "server error",
@@ -84,8 +85,18 @@ func TestHTTPClient_Get(t *testing.T) {
 			defer srv.Close()
 
 			c := New(srv.URL)
-			status, accrual, retry, err := c.Get(context.Background(), "42")
+			status, accrual, err := c.Get(context.Background(), "42")
 
+			if tt.want.retry > 0 {
+				var tme TooManyRequestsError
+				if !errors.As(err, &tme) {
+					t.Fatalf("expected TooManyRequestsError")
+				}
+				if tme.RetryAfter != tt.want.retry {
+					t.Errorf("retry %v != %v", tme.RetryAfter, tt.want.retry)
+				}
+				return
+			}
 			if tt.want.err {
 				if err == nil {
 					t.Fatalf("expected error %q", tt.want.errMsg)
@@ -106,9 +117,6 @@ func TestHTTPClient_Get(t *testing.T) {
 			}
 			if accrual != nil && !accrual.Equal(*tt.want.accrual) {
 				t.Errorf("accrual %s != %s", accrual, tt.want.accrual)
-			}
-			if retry != tt.want.retry {
-				t.Errorf("retry %v != %v", retry, tt.want.retry)
 			}
 		})
 	}
