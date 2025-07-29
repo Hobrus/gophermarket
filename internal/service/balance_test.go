@@ -153,6 +153,9 @@ type stubWithdrawalRepoBal struct{ calls int }
 func (s *stubWithdrawalRepoBal) Create(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
 	return nil
 }
+func (s *stubWithdrawalRepoBal) Withdraw(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
+	return nil
+}
 func (s *stubWithdrawalRepoBal) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error) {
 	return nil, nil
 }

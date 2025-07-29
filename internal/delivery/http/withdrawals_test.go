@@ -21,6 +21,9 @@ type stubWithdrawalRepo struct {
 func (s *stubWithdrawalRepo) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error) {
 	return s.listFunc(ctx, userID, limit, offset)
 }
+func (s *stubWithdrawalRepo) Withdraw(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
+	return nil
+}
 
 func TestWithdrawals_Unauthorized(t *testing.T) {
 	repo := &stubWithdrawalRepo{}

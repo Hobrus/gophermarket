@@ -38,6 +38,9 @@ type OrderRepo interface {
 type WithdrawalRepo interface {
 	// Create registers a withdrawal request for user.
 	Create(ctx context.Context, num string, userID int64, amount decimal.Decimal) error
+	// Withdraw atomically checks balance and registers withdrawal.
+	// Returns ErrInsufficientFunds if balance is not enough.
+	Withdraw(ctx context.Context, num string, userID int64, amount decimal.Decimal) error
 	// ListByUser returns withdrawal history for user sorted by processed time desc.
 	// Limit and offset define pagination parameters.
 	ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error)
