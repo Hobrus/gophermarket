@@ -19,6 +19,7 @@ func TestHTTPClient_Get(t *testing.T) {
 		accrual *decimal.Decimal
 		retry   time.Duration
 		err     bool
+		errMsg  string
 	}
 
 	dec := decimal.NewFromInt(10)
@@ -73,7 +74,7 @@ func TestHTTPClient_Get(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 			},
-			want: want{err: true},
+			want: want{err: true, errMsg: "unexpected status 500"},
 		},
 	}
 
@@ -87,7 +88,10 @@ func TestHTTPClient_Get(t *testing.T) {
 
 			if tt.want.err {
 				if err == nil {
-					t.Fatal("expected error")
+					t.Fatalf("expected error %q", tt.want.errMsg)
+				}
+				if err.Error() != tt.want.errMsg {
+					t.Fatalf("expected error %q, got %v", tt.want.errMsg, err)
 				}
 				return
 			}
