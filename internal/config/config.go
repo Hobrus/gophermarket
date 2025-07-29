@@ -19,16 +19,16 @@ type Config struct {
 func Load() (Config, error) {
 	cfg := Config{RunAddress: ":8080"}
 
-	if v := os.Getenv("RUN_ADDRESS"); v != "" {
+	if v, ok := os.LookupEnv("RUN_ADDRESS"); ok {
 		cfg.RunAddress = v
 	}
-	if v := os.Getenv("DATABASE_URI"); v != "" {
+	if v, ok := os.LookupEnv("DATABASE_URI"); ok {
 		cfg.DatabaseURI = v
 	}
-	if v := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); v != "" {
+	if v, ok := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS"); ok {
 		cfg.AccrualAddress = v
 	}
-	if v := os.Getenv("JWT_SECRET"); v != "" {
+	if v, ok := os.LookupEnv("JWT_SECRET"); ok {
 		cfg.JWTSecret = v
 	}
 
