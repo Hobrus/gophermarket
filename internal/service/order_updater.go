@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -78,19 +79,19 @@ func (u *OrderUpdater) Run(ctx context.Context, parallel, batch int, interval ti
 						return
 					}
 
-					status, accrual, retry, err := u.client.Get(ctx, num)
+					status, accrual, err := u.client.Get(ctx, num)
 					if err != nil {
-						return
-					}
-					if retry > 0 {
-						until := time.Now().Add(retry).UnixNano()
-						for {
-							old := atomic.LoadInt64(&u.sleepUntil)
-							if until <= old {
-								break
-							}
-							if atomic.CompareAndSwapInt64(&u.sleepUntil, old, until) {
-								break
+						var tme accrualclient.TooManyRequestsError
+						if errors.As(err, &tme) {
+							until := time.Now().Add(tme.RetryAfter).UnixNano()
+							for {
+								old := atomic.LoadInt64(&u.sleepUntil)
+								if until <= old {
+									break
+								}
+								if atomic.CompareAndSwapInt64(&u.sleepUntil, old, until) {
+									break
+								}
 							}
 						}
 						return
