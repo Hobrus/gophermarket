@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Hobrus/gophermarket/internal/accrualclient"
@@ -11,9 +12,26 @@ import (
 
 // OrderUpdater periodically updates order statuses using external accrual service.
 type OrderUpdater struct {
-	repo   repository.OrderRepo
-	client accrualclient.Client
-	inval  BalanceInvalidator
+	repo       repository.OrderRepo
+	client     accrualclient.Client
+	inval      BalanceInvalidator
+	sleepUntil int64
+}
+
+func (u *OrderUpdater) wait(ctx context.Context) error {
+	until := time.Unix(0, atomic.LoadInt64(&u.sleepUntil))
+	d := time.Until(until)
+	if d <= 0 {
+		return nil
+	}
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+	}
+	return nil
 }
 
 // NewOrderUpdater creates a new updater instance.
@@ -34,6 +52,10 @@ func (u *OrderUpdater) Run(ctx context.Context, parallel, batch int, interval ti
 			wg.Wait()
 			return
 		case <-ticker.C:
+			if err := u.wait(ctx); err != nil {
+				wg.Wait()
+				return
+			}
 			orders, err := u.repo.GetUnprocessed(ctx, batch)
 			if err != nil {
 				continue
@@ -52,19 +74,26 @@ func (u *OrderUpdater) Run(ctx context.Context, parallel, batch int, interval ti
 						<-sem
 						wg.Done()
 					}()
+					if err := u.wait(ctx); err != nil {
+						return
+					}
 
 					status, accrual, retry, err := u.client.Get(ctx, num)
 					if err != nil {
 						return
 					}
 					if retry > 0 {
-						t := time.NewTimer(retry)
-						select {
-						case <-ctx.Done():
-							t.Stop()
-							return
-						case <-t.C:
+						until := time.Now().Add(retry).UnixNano()
+						for {
+							old := atomic.LoadInt64(&u.sleepUntil)
+							if until <= old {
+								break
+							}
+							if atomic.CompareAndSwapInt64(&u.sleepUntil, old, until) {
+								break
+							}
 						}
+						return
 					}
 					if status == "" {
 						return
