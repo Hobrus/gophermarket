@@ -90,7 +90,7 @@ func main() {
 	authSvc := service.NewAuthService(userRepo, []byte(cfg.JWTSecret))
 	orderSvc := service.NewOrderService(orderRepo)
 	balanceSvc := service.NewBalanceService(orderRepo, withdrawalRepo)
-	withdrawSvc := service.NewWithdrawService(orderRepo, withdrawalRepo, balanceSvc)
+	withdrawSvc := service.NewWithdrawService(withdrawalRepo, balanceSvc)
 	updater := service.NewOrderUpdater(orderRepo, accrualclient.New(cfg.AccrualAddress), balanceSvc)
 
 	router := chi.NewRouter()

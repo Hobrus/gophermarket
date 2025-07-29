@@ -233,6 +233,35 @@ func (r *withdrawalRepo) Create(ctx context.Context, num string, userID int64, a
 	return tx.Commit(ctx)
 }
 
+func (r *withdrawalRepo) Withdraw(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
+	tx, ctx, cancel, err := beginTx(ctx, r.pool)
+	if err != nil {
+		return err
+	}
+	defer cancel()
+	defer tx.Rollback(ctx)
+
+	var accrual decimal.Decimal
+	err = tx.QueryRow(ctx, `SELECT COALESCE(SUM(accrual),0) FROM orders WHERE status='PROCESSED' AND user_id=$1`, userID).Scan(&accrual)
+	if err != nil {
+		return err
+	}
+	var withdrawn decimal.Decimal
+	err = tx.QueryRow(ctx, `SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=$1`, userID).Scan(&withdrawn)
+	if err != nil {
+		return err
+	}
+	if accrual.Sub(withdrawn).Cmp(amount) < 0 {
+		return domain.ErrInsufficientFunds
+	}
+
+	_, err = tx.Exec(ctx, `INSERT INTO withdrawals (order_number, user_id, amount) VALUES ($1,$2,$3)`, num, userID, amount)
+	if err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 func (r *withdrawalRepo) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error) {
 	tx, ctx, cancel, err := beginTx(ctx, r.pool)
 	if err != nil {

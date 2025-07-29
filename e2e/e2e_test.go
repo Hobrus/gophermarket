@@ -97,7 +97,7 @@ var _ = BeforeSuite(func() {
 	authSvc := service.NewAuthService(userRepo, []byte("secret"))
 	orderSvc := service.NewOrderService(orderRepo)
 	balanceSvc := service.NewBalanceService(orderRepo, withdrawalRepo)
-	withdrawSvc := service.NewWithdrawService(orderRepo, withdrawalRepo, balanceSvc)
+	withdrawSvc := service.NewWithdrawService(withdrawalRepo, balanceSvc)
 	updater := service.NewOrderUpdater(orderRepo, accrualclient.New(accrualAddr), balanceSvc)
 
 	router := chi.NewRouter()
