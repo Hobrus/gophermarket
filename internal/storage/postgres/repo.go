@@ -48,45 +48,31 @@ func isUniqueViolation(err error) bool {
 // -- UserRepo implementation --
 
 func (r *userRepo) Create(ctx context.Context, login, hash string) (int64, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return 0, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
 	var id int64
-	err = tx.QueryRow(ctx, `INSERT INTO users (login, password_hash) VALUES ($1,$2) RETURNING id`, login, hash).Scan(&id)
+	err := r.pool.QueryRow(ctx, `INSERT INTO users (login, password_hash) VALUES ($1,$2) RETURNING id`, login, hash).Scan(&id)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return 0, domain.ErrConflictSelf
 		}
 		return 0, err
 	}
-	if err = tx.Commit(ctx); err != nil {
-		return 0, err
-	}
 	return id, nil
 }
 
 func (r *userRepo) GetByLogin(ctx context.Context, login string) (domain.User, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return domain.User{}, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
 	var u domain.User
-	err = tx.QueryRow(ctx, `SELECT id, login, password_hash FROM users WHERE login=$1`, login).
+	err := r.pool.QueryRow(ctx, `SELECT id, login, password_hash FROM users WHERE login=$1`, login).
 		Scan(&u.ID, &u.Login, &u.PasswordHash)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.User{}, domain.ErrNotFound
 	}
 	if err != nil {
-		return domain.User{}, err
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return domain.User{}, err
 	}
 	return u, nil
@@ -117,14 +103,10 @@ func (r *orderRepo) Add(ctx context.Context, num string, userID int64, status st
 }
 
 func (r *orderRepo) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Order, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
-	rows, err := tx.Query(ctx, `SELECT number, user_id, status, accrual, uploaded_at FROM orders WHERE user_id=$1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3`, userID, limit, offset)
+	rows, err := r.pool.Query(ctx, `SELECT number, user_id, status, accrual, uploaded_at FROM orders WHERE user_id=$1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3`, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -141,23 +123,15 @@ func (r *orderRepo) ListByUser(ctx context.Context, userID int64, limit, offset 
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
-	}
-
-	if err = tx.Commit(ctx); err != nil {
-		return nil, err
 	}
 	return orders, nil
 }
 
 func (r *orderRepo) GetUnprocessed(ctx context.Context, limit int) ([]domain.Order, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
-	rows, err := tx.Query(ctx, `SELECT number, user_id, status, accrual, uploaded_at FROM orders WHERE status IN ('NEW','PROCESSING') ORDER BY uploaded_at LIMIT $1`, limit)
+	rows, err := r.pool.Query(ctx, `SELECT number, user_id, status, accrual, uploaded_at FROM orders WHERE status IN ('NEW','PROCESSING') ORDER BY uploaded_at LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -175,42 +149,27 @@ func (r *orderRepo) GetUnprocessed(ctx context.Context, limit int) ([]domain.Ord
 	if rows.Err() != nil {
 		return nil, rows.Err()
 	}
-
-	if err = tx.Commit(ctx); err != nil {
-		return nil, err
-	}
 	return orders, nil
 }
 
 func (r *orderRepo) UpdateStatus(ctx context.Context, num, status string, accrual *decimal.Decimal) error {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(ctx, `UPDATE orders SET status=$2, accrual=$3 WHERE number=$1`, num, status, accrual)
+	_, err := r.pool.Exec(ctx, `UPDATE orders SET status=$2, accrual=$3 WHERE number=$1`, num, status, accrual)
 	if err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return nil
 }
 
 func (r *orderRepo) SumProcessedAccrualByUser(ctx context.Context, userID int64) (decimal.Decimal, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return decimal.Zero, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
 	var sum decimal.Decimal
-	err = tx.QueryRow(ctx, `SELECT COALESCE(SUM(accrual),0) FROM orders WHERE status='PROCESSED' AND user_id=$1`, userID).Scan(&sum)
+	err := r.pool.QueryRow(ctx, `SELECT COALESCE(SUM(accrual),0) FROM orders WHERE status='PROCESSED' AND user_id=$1`, userID).Scan(&sum)
 	if err != nil {
-		return decimal.Zero, err
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return decimal.Zero, err
 	}
 	return sum, nil
@@ -219,18 +178,14 @@ func (r *orderRepo) SumProcessedAccrualByUser(ctx context.Context, userID int64)
 // -- WithdrawalRepo implementation --
 
 func (r *withdrawalRepo) Create(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(ctx, `INSERT INTO withdrawals (order_number, user_id, amount) VALUES ($1,$2,$3)`, num, userID, amount)
+	_, err := r.pool.Exec(ctx, `INSERT INTO withdrawals (order_number, user_id, amount) VALUES ($1,$2,$3)`, num, userID, amount)
 	if err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return nil
 }
 
 func (r *withdrawalRepo) Withdraw(ctx context.Context, num string, userID int64, amount decimal.Decimal) error {
@@ -263,14 +218,10 @@ func (r *withdrawalRepo) Withdraw(ctx context.Context, num string, userID int64,
 }
 
 func (r *withdrawalRepo) ListByUser(ctx context.Context, userID int64, limit, offset int) ([]domain.Withdrawal, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
-	rows, err := tx.Query(ctx, `SELECT order_number, user_id, amount, processed_at FROM withdrawals WHERE user_id=$1 ORDER BY processed_at DESC LIMIT $2 OFFSET $3`, userID, limit, offset)
+	rows, err := r.pool.Query(ctx, `SELECT order_number, user_id, amount, processed_at FROM withdrawals WHERE user_id=$1 ORDER BY processed_at DESC LIMIT $2 OFFSET $3`, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -287,26 +238,16 @@ func (r *withdrawalRepo) ListByUser(ctx context.Context, userID int64, limit, of
 	if rows.Err() != nil {
 		return nil, rows.Err()
 	}
-	if err = tx.Commit(ctx); err != nil {
-		return nil, err
-	}
 	return res, nil
 }
 
 func (r *withdrawalRepo) SumByUser(ctx context.Context, userID int64) (decimal.Decimal, error) {
-	tx, ctx, cancel, err := beginTx(ctx, r.pool)
-	if err != nil {
-		return decimal.Zero, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	defer tx.Rollback(ctx)
 
 	var sum decimal.Decimal
-	err = tx.QueryRow(ctx, `SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=$1`, userID).Scan(&sum)
+	err := r.pool.QueryRow(ctx, `SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE user_id=$1`, userID).Scan(&sum)
 	if err != nil {
-		return decimal.Zero, err
-	}
-	if err = tx.Commit(ctx); err != nil {
 		return decimal.Zero, err
 	}
 	return sum, nil
