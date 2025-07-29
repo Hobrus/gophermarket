@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Hobrus/gophermarket/pkg/logger"
 	"github.com/Hobrus/gophermarket/pkg/luhn"
 )
 
@@ -54,6 +55,9 @@ func UploadOrder(svc UploadService) http.HandlerFunc {
 		}
 		errSelf, errOther, err := svc.Add(r.Context(), userID, number)
 		if err != nil {
+			if l := logger.FromContext(r.Context()); l != nil {
+				l.Error().Err(err).Msg("failed to add order")
+			}
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
