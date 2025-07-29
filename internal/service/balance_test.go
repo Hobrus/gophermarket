@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package service
 
 import (
@@ -19,10 +22,6 @@ import (
 
 func setupPostgresBal(t *testing.T) (*pgxpool.Pool, func()) {
 	t.Helper()
-
-	if os.Getenv("ENABLE_DOCKER_TESTS") == "" {
-		t.Skip("skipping docker dependent tests; set ENABLE_DOCKER_TESTS=1 to run")
-	}
 
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
